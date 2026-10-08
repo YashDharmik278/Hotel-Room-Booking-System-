@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrandStay • Hotel Room Booking System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Header Navigation -->
+  <header class="header">
+    <div class="header-container">
+      <a href="#" class="brand" onclick="switchTab('inventory'); return false;">
+        <div class="brand-icon">
+          <i class="fa-solid fa-hotel"></i>
+        </div>
+        <div class="brand-text">
+          <h1>GrandStay Hotel</h1>
+          <p>Room Booking & Management System</p>
+        </div>
+      </a>
+
+      <nav class="nav-tabs">
+        <button class="nav-tab-btn active" data-tab="inventory" onclick="switchTab('inventory')">
+          <i class="fa-solid fa-bed"></i> Room Inventory
+        </button>
+        <button class="nav-tab-btn" data-tab="add-room" onclick="switchTab('add-room')">
+          <i class="fa-solid fa-plus-circle"></i> Add Room
+        </button>
+        <button class="nav-tab-btn" data-tab="search-book" onclick="switchTab('search-book')">
+          <i class="fa-solid fa-calendar-check"></i> Search & Book
+        </button>
+        <button class="nav-tab-btn" data-tab="bookings" onclick="switchTab('bookings')">
+          <i class="fa-solid fa-book-bookmark"></i> Bookings
+        </button>
+        <button class="nav-tab-btn" data-tab="test-suite" onclick="switchTab('test-suite')">
+          <i class="fa-solid fa-flask-vial"></i> Edge Cases & Testing
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+
+    <!-- Top Summary Statistics -->
+    <section class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <i class="fa-solid fa-door-closed"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotalRooms">0</h3>
+          <p>Total Rooms</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statAvailableRooms">0</h3>
+          <p>Available Today</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statConfirmedBookings">0</h3>
+          <p>Confirmed Bookings</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">
+          <i class="fa-solid fa-indian-rupee-sign"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotalRevenue">₹0</h3>
+          <p>Total Revenue</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: Room Inventory & Management -->
+    <section id="tab-inventory" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title"><i class="fa-solid fa-bed"></i> Room Inventory</h2>
+            <p class="card-subtitle">Manage, view, and organize all hotel rooms and their real-time status.</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchTab('add-room')">
+            <i class="fa-solid fa-plus"></i> Add New Room
+          </button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <input type="text" id="roomSearchInput" class="input-control" placeholder="Search Room No..." oninput="filterRooms()">
+            <select id="roomTypeFilter" class="input-control" onchange="filterRooms()">
+              <option value="All">All Room Types</option>
+              <option value="Single">Single</option>
+              <option value="Double">Double</option>
+              <option value="Deluxe">Deluxe</option>
+              <option value="Suite">Suite</option>
+              <option value="Executive Suite">Executive Suite</option>
+            </select>
+            <select id="roomStatusFilter" class="input-control" onchange="filterRooms()">
+              <option value="All">All Statuses</option>
+              <option value="Available">Available</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" onclick="loadRooms(); loadStats();">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Room Cards Grid -->
+        <div class="room-grid" id="roomsContainer">
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            <p>Loading rooms...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Add New Room -->
+    <section id="tab-add-room" class="tab-pane" style="display: none;">
+      <div class="card" style="max-width: 680px; margin: 0 auto;">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title"><i class="fa-solid fa-plus-circle"></i> Add New Room Record</h2>
+            <p class="card-subtitle">Register a new room into the SQLite database with full details.</p>
+          </div>
+        </div>
+
+        <form id="addRoomForm" onsubmit="handleAddRoom(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="newRoomNumber">Room Number *</label>
+              <input type="text" id="newRoomNumber" class="input-control" placeholder="e.g. 103, 204" required>
+              <span class="form-helper">Must be unique</span>
+            </div>
+
+            <div class="form-group">
+              <label for="newRoomType">Room Type *</label>
+              <select id="newRoomType" class="input-control" required>
+                <option value="">Select Room Type</option>
+                <option value="Single">Single (1 Bed)</option>
+                <option value="Double">Double (2 Beds)</option>
+                <option value="Deluxe">Deluxe (King Bed + View)</option>
+                <option value="Suite">Suite (Living + Balcony)</option>
+                <option value="Executive Suite">Executive Suite (Luxury)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="newPricePerNight">Price per Night (₹) *</label>
+              <input type="number" id="newPricePerNight" class="input-control" min="1" step="0.01" placeholder="e.g. 2500" required>
+            </div>
+
+            <div class="form-group">
+              <label for="newCapacity">Max Capacity (Guests) *</label>
+              <input type="number" id="newCapacity" class="input-control" min="1" max="10" value="2" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="newStatus">Initial Status *</label>
+              <select id="newStatus" class="input-control" required>
+                <option value="Available">Available for Booking</option>
+                <option value="Maintenance">Under Maintenance</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('inventory')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="addRoomBtn">
+              <i class="fa-solid fa-floppy-disk"></i> Save Room
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: Search Available Rooms & Book -->
+    <section id="tab-search-book" class="tab-pane" style="display: none;">
+      <div class="search-banner">
+        <h2><i class="fa-solid fa-magnifying-glass"></i> Search Available Rooms by Dates</h2>
+        <p>Find rooms guaranteed to be free without overlapping reservations for your requested stay.</p>
+      </div>
+
+      <div class="card">
+        <form id="searchRoomsForm" onsubmit="handleSearchRooms(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="searchCheckIn">Check-in Date *</label>
+              <input type="date" id="searchCheckIn" class="input-control" required onchange="updateSearchCheckOutMin()">
+            </div>
+
+            <div class="form-group">
+              <label for="searchCheckOut">Check-out Date *</label>
+              <input type="date" id="searchCheckOut" class="input-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="searchRoomType">Room Type</label>
+              <select id="searchRoomType" class="input-control">
+                <option value="All">All Types</option>
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="Deluxe">Deluxe</option>
+                <option value="Suite">Suite</option>
+                <option value="Executive Suite">Executive Suite</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary" style="height: 42px;">
+                <i class="fa-solid fa-search"></i> Check Availability
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Search Results Area -->
+      <div id="searchResultsSection" style="display: none;">
+        <div class="card-header" style="margin-bottom: 1rem;">
+          <div>
+            <h3 class="card-title" id="searchResultsHeading">Available Rooms</h3>
+            <p class="card-subtitle" id="searchResultsSubtitle"></p>
+          </div>
+        </div>
+        <div class="room-grid" id="searchResultsGrid"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Manage Bookings -->
+    <section id="tab-bookings" class="tab-pane" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title"><i class="fa-solid fa-book-bookmark"></i> All Bookings Records</h2>
+            <p class="card-subtitle">View active and past reservations, track dates, and cancel bookings.</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchTab('search-book')">
+            <i class="fa-solid fa-calendar-plus"></i> New Reservation
+          </button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <input type="text" id="bookingSearchInput" class="input-control" placeholder="Search Guest / Room No..." oninput="filterBookings()">
+            <select id="bookingStatusFilter" class="input-control" onchange="filterBookings()">
+              <option value="All">All Statuses</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" onclick="loadBookings(); loadStats();">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Guest Details</th>
+                <th>Room Info</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Nights</th>
+                <th>Total Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 2rem;">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Loading bookings...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: Edge Cases & Testing Suite -->
+    <section id="tab-test-suite" class="tab-pane" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title"><i class="fa-solid fa-flask-vial"></i> Edge Case Validation & API Inspector</h2>
+            <p class="card-subtitle">Interact with and test critical edge cases prescribed in the project objectives.</p>
+          </div>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 1.25rem;">
+          Click any of the automated test triggers below to test validation barriers, overlapping date logic, HTTP status codes, and error responses:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <button class="btn btn-secondary" onclick="runEdgeCaseTest('double-booking')" style="flex-direction: column; padding: 1rem; text-align: left; align-items: flex-start;">
+            <strong style="color: var(--danger);"><i class="fa-solid fa-ban"></i> 1. Double-Booking Overlap</strong>
+            <span style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">Attempt to book Room 101 on an already reserved date range (Expects HTTP 409 Conflict)</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="runEdgeCaseTest('invalid-dates')" style="flex-direction: column; padding: 1rem; text-align: left; align-items: flex-start;">
+            <strong style="color: var(--warning);"><i class="fa-solid fa-calendar-xmark"></i> 2. Checkout &le; Checkin</strong>
+            <span style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">Attempt booking with check-out date earlier than check-in date (Expects HTTP 400 Bad Request)</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="runEdgeCaseTest('duplicate-room')" style="flex-direction: column; padding: 1rem; text-align: left; align-items: flex-start;">
+            <strong style="color: #6366f1;"><i class="fa-solid fa-clone"></i> 3. Duplicate Room Number</strong>
+            <span style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">Attempt to add a room with number "101" which already exists (Expects HTTP 409 Conflict)</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="runEdgeCaseTest('cancel-nonexistent')" style="flex-direction: column; padding: 1rem; text-align: left; align-items: flex-start;">
+            <strong style="color: #ec4899;"><i class="fa-solid fa-trash-can"></i> 4. Cancel Non-existent</strong>
+            <span style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.25rem;">Attempt to delete booking ID #999999 (Expects HTTP 404 Not Found)</span>
+          </button>
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-terminal"></i> Live HTTP Request / Response Inspector</span>
+            <button class="btn btn-secondary btn-sm" onclick="clearTestInspector()"><i class="fa-solid fa-eraser"></i> Clear</button>
+          </h4>
+          <pre id="testOutputConsole" class="tester-box">// Click a test above or perform any API action to inspect raw HTTP exchanges here...</pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="bookingModalTitle">Confirm Room Reservation</h3>
+        <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+      </div>
+      <form id="bookingModalForm" onsubmit="handleConfirmBooking(event)">
+        <div class="modal-body">
+          <input type="hidden" id="modalRoomId">
+
+          <div style="background: var(--primary-light); padding: 0.85rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem;">
+            <div style="font-weight: 700; color: var(--primary); font-size: 1.05rem;" id="modalRoomName">Room 101 - Deluxe</div>
+            <div style="font-size: 0.825rem; color: var(--secondary);" id="modalRoomRate">Rate: ₹2500 / night</div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="modalGuestName">Guest Full Name *</label>
+            <input type="text" id="modalGuestName" class="input-control" placeholder="e.g. John Doe" required>
+          </div>
+
+          <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="form-group">
+              <label for="modalGuestEmail">Guest Email</label>
+              <input type="email" id="modalGuestEmail" class="input-control" placeholder="e.g. john@example.com">
+            </div>
+            <div class="form-group">
+              <label for="modalGuestPhone">Phone Number</label>
+              <input type="tel" id="modalGuestPhone" class="input-control" placeholder="e.g. +91 9876543210">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="form-group">
+              <label for="modalCheckIn">Check-in Date *</label>
+              <input type="date" id="modalCheckIn" class="input-control" required onchange="recalculateModalPrice()">
+            </div>
+            <div class="form-group">
+              <label for="modalCheckOut">Check-out Date *</label>
+              <input type="date" id="modalCheckOut" class="input-control" required onchange="recalculateModalPrice()">
+            </div>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border); padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.875rem; color: var(--secondary);">Total Estimated Stay:</span>
+            <span style="font-size: 1.15rem; font-weight: 700; color: var(--dark);" id="modalPriceSummary">₹0 (0 nights)</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="confirmBookingBtn">
+            <i class="fa-solid fa-check"></i> Book Now
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Room Modal -->
+  <div class="modal-overlay" id="editRoomModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-pen-to-square"></i> Edit Room Details</h3>
+        <button class="modal-close" onclick="closeEditRoomModal()">&times;</button>
+      </div>
+      <form id="editRoomForm" onsubmit="handleUpdateRoom(event)">
+        <div class="modal-body">
+          <input type="hidden" id="editRoomId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="editRoomNumber">Room Number *</label>
+              <input type="text" id="editRoomNumber" class="input-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editRoomType">Room Type *</label>
+              <select id="editRoomType" class="input-control" required>
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="Deluxe">Deluxe</option>
+                <option value="Suite">Suite</option>
+                <option value="Executive Suite">Executive Suite</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editPricePerNight">Price per Night (₹) *</label>
+              <input type="number" id="editPricePerNight" class="input-control" min="1" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label for="editCapacity">Capacity (Guests) *</label>
+              <input type="number" id="editCapacity" class="input-control" min="1" max="10" required>
+            </div>
+            <div class="form-group full-width">
+              <label for="editStatus">Status *</label>
+              <select id="editStatus" class="input-control" required>
+                <option value="Available">Available</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditRoomModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="updateRoomBtn">
+            <i class="fa-solid fa-save"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
